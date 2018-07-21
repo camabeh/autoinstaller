@@ -1,1 +1,86 @@
-users:
+export http_proxy=http://proxy.tipsport.cz:3128
+yum -y install epel-release centos-release-openshift-origin39
+yum -y install origin origin-clients vim-enhanced atomic-openshift-utils NetworkManager python-rhsm-certificates
+systemctl enable NetworkManager --now
+
+do /etc/NetworkManger/NetworkManger.conf
+> [main]
+> #plugins=ifcfg-rh,ibft
+> dns=none
+systemctl restart NetworkManager
+
+do /etc/resolv.conf
+> search nip.io
+? nameserver 192.168.16.10 nebo 8.8.8.8
+
+# ONLY ON MASTER
+yum -y install httpd-tools gcc python-devel python-pip
+pip -v install ansible==2.2.2.0
+
+ONLY ON NODE
+yum -y install docker libcgroup-tools
+
+cat <<EOF > /etc/sysconfig/docker-storage-setup
+DEVS=/dev/sdb
+VG=docker-vg
+EOF
+
+lsblk to check
+
+docker-storage-setup
+systemctl enable docker.service --now
+
+setsebool -P virt_use_nfs 1
+setsebool -P virt_sandbox_use_nfs 1
+
+NA MASTER:
+do /root/hosts
+```
+[OSEv3:children]
+nodes
+nfs
+masters
+etcd
+
+[OSEv3:vars]
+openshift_master_cluster_public_hostname=None
+openshift_master_default_subdomain=apps.172.20.25.11.nip.io
+ansible_ssh_user=root
+openshift_master_cluster_hostname=None
+openshift_override_hostname_check=true
+deployment_type=origin
+openshift_http_proxy=http://proxy.tipsport.cz:3128
+
+[nodes:vars]
+openshift_disable_check=disk_availability,memory_availability,docker_storage,package_availability,package_version
+
+[masters:vars]
+openshift_disable_check=disk_availability,memory_availability,docker_storage,package_availability,package_version
+
+[nodes]
+172.20.25.10  openshift_public_ip=172.20.25.10 openshift_ip=172.20.25.10 openshift_public_hostname=ocp1.172.20.25.10.nip.io openshift_hostname=ocp1.172.20.25.10.nip.io connect_to=172.20.25.10 openshift_schedulable=False ansible_connection=local
+172.20.25.11  openshift_public_ip=172.20.25.11 openshift_ip=172.20.25.11 openshift_public_hostname=ocp2.172.20.25.11.nip.io openshift_hostname=ocp2.172.20.25.11.nip.io connect_to=172.20.25.11 openshift_node_labels="{'region': 'infra'}" openshift_schedulable=True
+
+[nfs]
+172.20.25.10 connect_to=172.20.25.10 ansible_connection=local
+
+[masters]
+172.20.25.10  openshift_public_ip=172.20.25.10 openshift_ip=172.20.25.10 openshift_public_hostname=ocp1.172.20.25.10.nip.io openshift_hostname=ocp1.172.20.25.10.nip.io connect_to=172.20.25.10 ansible_connection=local
+
+[etcd]
+172.20.25.10  openshift_public_ip=172.20.25.10 openshift_ip=172.20.25.10 openshift_public_hostname=ocp1.172.20.25.10.nip.io openshift_hostname=ocp1.172.20.25.10.nip.io connect_to=172.20.25.10 ansible_connection=local
+```
+
+ansible-playbook -i /root/hosts /usr/share/ansible/openshift-ansible/playbooks/prerequisites.yml
+https://github.com/camabeh/autoinstaller.git
+
+
+
+
+
+
+
+ansible-playbook --private-key=/vagrant/keys/private -i /root/hosts /usr/share/ansible/openshift-ansible/playbooks/byo/config.yml
+
+--- bug with proxy not working
+/usr/share/ansible/openshift-ansible/roles/openshift_facts/tasks/main.yml

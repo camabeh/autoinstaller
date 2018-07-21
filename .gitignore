@@ -3,3 +3,6 @@
 *.retry
 passes.yaml
 vagrant
+.vagrant
+.idea
+tmp/

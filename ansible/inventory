@@ -1,2 +1,39 @@
-[install-hosts]
-127.0.0.1 ansible_connection=local
+[OSEv3:children]
+nodes
+nfs
+masters
+etcd
+
+[OSEv3:vars]
+openshift_master_cluster_public_hostname=None
+openshift_master_default_subdomain=apps.172.20.25.11.nip.io
+ansible_ssh_user=root
+openshift_master_cluster_hostname=None
+openshift_override_hostname_check=true
+deployment_type=origin
+# openshift_http_proxy=http://proxy.tipsport.cz:3128
+# docker_http_proxy=http://proxy.tipsport.cz:3128
+
+[nodes:vars]
+openshift_disable_check=disk_availability,memory_availability,docker_storage
+
+[masters:vars]
+openshift_disable_check=disk_availability,memory_availability,docker_storage
+
+[nodes]
+172.20.25.10  openshift_public_ip=172.20.25.10 openshift_ip=172.20.25.10 openshift_public_hostname=ocp1.172.20.25.10.nip.io openshift_hostname=ocp1.172.20.25.10.nip.io connect_to=172.20.25.10 ansible_connection=local
+172.20.25.11  openshift_public_ip=172.20.25.11 openshift_ip=172.20.25.11 openshift_public_hostname=ocp2.172.20.25.11.nip.io openshift_hostname=ocp2.172.20.25.11.nip.io connect_to=172.20.25.11 openshift_node_labels="{'region': 'infra'}" openshift_schedulable=True
+
+[nfs]
+172.20.25.10 connect_to=172.20.25.10 ansible_user=root ansible_connection=ssh
+
+[masters]
+172.20.25.10  openshift_public_ip=172.20.25.10 openshift_ip=172.20.25.10 openshift_public_hostname=ocp1.172.20.25.10.nip.io openshift_hostname=ocp1.172.20.25.10.nip.io connect_to=172.20.25.10 ansible_user=root ansible_connection=ssh
+
+[etcd]
+172.20.25.10  openshift_public_ip=172.20.25.10 openshift_ip=172.20.25.10 openshift_public_hostname=ocp1.172.20.25.10.nip.io openshift_hostname=ocp1.172.20.25.10.nip.io connect_to=172.20.25.10 ansible_user=root ansible_connection=ssh
+```
+
+##############################
+
+# ansible-playbook -vvvv -i /tmp/autoinstaller-other-inventory -e openshift_version=3.6 -e ansible_ssh_user=root -e ansible_ssh_private_key_file=/home/faber/Work/deployment/openshift-in-action-autoinstaller/keys/private -e openshift_type=openshift-enterprise -e deploy_catalog=true -e deployment=other -e deploy_openshift=true -e docker_vol=/dev/sdb -e node_ip=172.20.25.11 -e master_ip=172.20.25.10  site.yaml

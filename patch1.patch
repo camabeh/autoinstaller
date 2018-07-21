@@ -1,0 +1,38 @@
+From 24087d7f5fb1c91eacd14ca0c9a8012bfee0d3c8 Mon Sep 17 00:00:00 2001
+From: Arun Babu Neelicattu <arun.neelicattu@gmail.com>
+Date: Sun, 15 Apr 2018 14:54:56 +1200
+Subject: [PATCH] filter_plugins: handle lazy loaded hostvars
+
+Ensure that the openshift_master.py filter plugin handles ansible 2.4
+and 2.5 hostvars gracefully.
+
+This is required due to the changes introduced in ansible via changes in
+ansible/ansible#35913.
+
+Resolves: #7596
+---
+ roles/lib_utils/filter_plugins/openshift_master.py | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/roles/lib_utils/filter_plugins/openshift_master.py b/roles/lib_utils/filter_plugins/openshift_master.py
+index e67b19c285d..5b021f073c7 100644
+--- a/roles/lib_utils/filter_plugins/openshift_master.py
++++ b/roles/lib_utils/filter_plugins/openshift_master.py
+@@ -3,6 +3,7 @@
+ '''
+ Custom filters for use in openshift-master
+ '''
++import collections
+ import copy
+ import sys
+
+@@ -483,7 +484,8 @@ def translate_idps(idps, api_version):
+     @staticmethod
+     def certificates_to_synchronize(hostvars, include_keys=True, include_ca=True):
+         ''' Return certificates to synchronize based on facts. '''
+-        if not issubclass(type(hostvars), dict):
++        if not issubclass(type(hostvars), dict) \
++                and not issubclass(type(hostvars), collections.Mapping):
+             raise errors.AnsibleFilterError("|failed expects hostvars is a dict")
+         certs = ['admin.crt',
+                  'admin.key',

@@ -4,7 +4,7 @@
   roles:
     - hypervisor
 
-- hosts: openshift
+- hosts: nodes
   become: yes
   roles:
     - openshift-common
